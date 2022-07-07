@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 
 class Record:
-    def __init__(self, amount, comment, date=None):
+    def __init__(self, amount: float, comment: str, date: dt = None) -> None:
         self.amount = amount
         self.comment = comment
         if not date:
@@ -15,37 +15,49 @@ class Record:
 @dataclass()
 class Calculator:
     limit: float
-    records = []
+    cash_records = []
+    calories_records = []
 
-    def add_record(self, rec: Record):
+    def add_record(self, rec: Record) -> None:
         """Сохранять новую запись о расходах."""
-        self.records.append([rec.amount, rec.comment, rec.date])
+        if type(self).__name__ == "CashCalculator":
+            self.cash_records.append([rec.amount, rec.comment, rec.date])
+        else:
+            self.calories_records.append([rec.amount, rec.comment, rec.date])
 
-    def get_today_stats(self):
+    def get_today_stats(self) -> float:
         """Считать, сколько денег/калорий потрачено/съедено сегодня."""
         res = 0
-        for record in self.records:
+        if type(self).__name__ == "CashCalculator":
+            records = self.cash_records
+        else:
+            records = self.calories_records
+        for record in records:
             if record[2] == dt.date.today():
                 res = res + record[0]
         return res
 
-    def get_week_stats(self):
+    def get_week_stats(self) -> float:
         """Считать, сколько денег/калорий потрачено/получено
         за последние 7 дней."""
-        spent = 0
-        for record in self.records:
+        res = 0
+        if type(self).__name__ == "CashCalculator":
+            records = self.cash_records
+        else:
+            records = self.calories_records
+        for record in records:
             if (dt.date.today() - record[2]).days <= 7:
-                spent = spent + record[0]
-        return spent
+                res = res + record[0]
+        return res
 
 
 class CashCalculator(Calculator):
     """Калькулятор для подсчета денег."""
 
-    USD_RATE = 62.91
-    EURO_RATE = 64.33
+    USD_RATE: float = 62.91
+    EURO_RATE: float = 64.33
 
-    def get_today_cash_remained(self, currency):
+    def get_today_cash_remained(self, currency: str) -> str:
         """Определять, сколько ещё денег можно потратить сегодня в рублях,
         долларах или евро."""
         currency_type = {
@@ -57,6 +69,7 @@ class CashCalculator(Calculator):
         if currency not in currency_type:
             raise KeyError(f"Ключ {currency} не найден "
                            f"в словаре {currency_type}")
+
         if self.get_today_stats() < self.limit:
             res = self.limit - self.get_today_stats() / currency_type[currency]
             return f"На сегодня осталось {res:.2f} {currency}"
@@ -70,30 +83,42 @@ class CashCalculator(Calculator):
 class CaloriesCalculator(Calculator):
     """Калькулятор для подсчета калорий."""
 
-    def get_calories_remained(self):
+    def get_calories_remained(self) -> str:
         """Определять, сколько ещё калорий можно/нужно получить сегодня."""
-        if self.amount < self.limit:
+        if self.get_today_stats() < self.limit:
             return (f"Сегодня можно съесть что-нибудь ещё,"
                     f"но с общей калорийностью "
-                    f"не более {self.limit - self.amount} кКал")
+                    f"не более {self.limit - self.get_today_stats()} кКал")
         else:
             return "Хватит есть!"
         pass
 
 
-def main():
+def main() -> None:
     """Главная функция."""
     cash_calculator = CashCalculator(1000)
+    calories_calculator = CaloriesCalculator(1000)
 
-    cash_calculator.add_record(Record(amount=145, comment="кофе"))
-    cash_calculator.add_record(Record(amount=300, comment="Серёге за обед"))
-    cash_calculator.add_record(Record(amount=3000, comment="бар в Танин др",
-                                      date="08.06.2022"))
+    cash_calculator.add_record(Record(200, "Безудержный шопинг"))
+    cash_calculator.add_record(Record(300, "Наполнение потребительской "
+                                           "корзины"))
+    cash_calculator.add_record(Record(691, "Катание на такси", "01.07.2022"))
+    # _________________________________________________________________________
+    calories_calculator.add_record(Record(1186, "Кусок тортика. И ещё один.",
+                                          "08.07.2022"))
+    calories_calculator.add_record(Record(84, "Йогурт.", "08.07.2022"))
+    calories_calculator.add_record(Record(1140, "Баночка чипсов.",
+                                          "24.02.2019"))
+    # _________________________________________________________________________
 
     print(cash_calculator.get_today_stats())
-    print(cash_calculator.get_today_cash_remained("rub"))
+    print(calories_calculator.get_today_stats())
 
     print(cash_calculator.get_week_stats())
+    print(calories_calculator.get_week_stats())
+
+    print(cash_calculator.get_today_cash_remained("rub"))
+    print(calories_calculator.get_calories_remained())
 
 
 if __name__ == '__main__':
