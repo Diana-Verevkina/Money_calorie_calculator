@@ -64,7 +64,7 @@ class CashCalculator(Calculator):
 
         if self.check_limit():
             res = (self.limit - self.get_today_stats()
-                   / currency_type[currency][0])
+                   / const)
             return f"На сегодня осталось {res:.2f} {name}"
         elif self.get_today_stats() == self.limit:
             return f"Денег нет, держись"
