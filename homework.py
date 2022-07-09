@@ -11,7 +11,6 @@ class Record:
             self.date = dt.datetime.strptime(date, '%d.%m.%Y').date()
 
 
-# @dataclass()
 class Calculator:
     def __init__(self, limit: float):
         self.limit = limit
@@ -42,8 +41,6 @@ class Calculator:
         return False
 
 
-
-
 class CashCalculator(Calculator):
     """Калькулятор для подсчета денег."""
 
@@ -63,15 +60,18 @@ class CashCalculator(Calculator):
             raise KeyError(f"Ключ {currency} не найден "
                            f"в словаре {currency_type}")
 
+        const, name = currency_type[currency]
+
         if self.check_limit():
             res = (self.limit - self.get_today_stats()
                    / currency_type[currency][0])
-            return f"На сегодня осталось {res:.2f} {currency_type[currency][1]}"
+            return f"На сегодня осталось {res:.2f} {name}"
         elif self.get_today_stats() == self.limit:
             return f"Денег нет, держись"
         else:
+            cash_remained = self.get_today_stats() - self.limit
             return (f"Денег нет, держись: твой долг - "
-                    f"{self.get_today_stats() - self.limit:.2f} {currency_type[currency][1]}")
+                    f"{cash_remained:.2f} {name}")
 
 
 class CaloriesCalculator(Calculator):
@@ -80,9 +80,10 @@ class CaloriesCalculator(Calculator):
     def get_calories_remained(self) -> str:
         """Определять, сколько ещё калорий можно/нужно получить сегодня."""
         if self.check_limit():
+            calories_remained = self.limit - self.get_today_stats()
             return (f"Сегодня можно съесть что-нибудь ещё,"
                     f"но с общей калорийностью "
-                    f"не более {self.limit - self.get_today_stats()} кКал")
+                    f"не более {calories_remained} кКал")
         else:
             return "Хватит есть!"
 
